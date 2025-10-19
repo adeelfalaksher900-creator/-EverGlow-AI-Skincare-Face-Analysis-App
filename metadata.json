@@ -1,0 +1,7 @@
+{
+  "name": "EverGlow",
+  "description": "An AI-powered skincare assistant that analyzes your skin from a selfie, providing personalized routines and product recommendations using Google Gemini.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
