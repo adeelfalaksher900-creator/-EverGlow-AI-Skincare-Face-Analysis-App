@@ -206,34 +206,45 @@ export const CustomRoutine: React.FC<CustomRoutineProps> = ({ aiGeneratedRoutine
     };
 
     const handleRequestNotifications = async () => {
-        if ('Notification' in window) {
-            const permission = await Notification.requestPermission();
-            setNotificationPermission(permission);
-            if (permission === 'granted') {
-                 new Notification("EverGlow Reminders Active!", {
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            alert("This browser does not support desktop notifications, which are required for reminders.");
+            return;
+        }
+
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+
+        if (permission === 'granted') {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification("EverGlow Reminders Active!", {
                     body: "You'll now receive reminders for your skincare routines.",
+                    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 24 24' fill='%23DB2777' stroke='white' stroke-width='0.5'%3E%3Crect width='24' height='24' rx='4' fill='%23111827'/%3E%3Cpath d='M12 3L9.27 9.27L3 12l6.27 2.73L12 21l2.73-6.27L21 12l-6.27-2.73L12 3z' /%3E%3Cpath d='M5 3v4' /%3E%3Cpath d='M19 17v4' /%3E%3Cpath d='M3 5h4' /%3E%3Cpath d='M17 19h4' /%3E%3C/svg%3E"
                 });
-            } else {
-                alert("Notifications are disabled. You can enable them in your browser settings.");
-            }
+            });
+        } else if (permission === 'denied') {
+             alert("Notifications are blocked. To enable reminders, you'll need to go into your browser's site settings for this page and grant notification permission.");
         } else {
-             alert("This browser does not support desktop notification");
+            alert("Permission was not granted. You can click the button again to enable reminders.");
         }
     };
     
     useEffect(() => {
        const interval = setInterval(() => {
-           if (notificationPermission !== 'granted') return;
+           if (notificationPermission !== 'granted' || !('serviceWorker' in navigator)) return;
            
            const now = new Date();
            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
            
-           if (amReminder && amReminder === currentTime) {
-               new Notification("☀️ Good Morning!", { body: "Time for your AM skincare routine. Let's start the day fresh!" });
-           }
-           if (pmReminder && pmReminder === currentTime) {
-               new Notification("🌙 Good Evening!", { body: "Time for your PM skincare routine. Wind down and care for your skin." });
-           }
+           navigator.serviceWorker.ready.then(registration => {
+               const icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 24 24' fill='%23DB2777' stroke='white' stroke-width='0.5'%3E%3Crect width='24' height='24' rx='4' fill='%23111827'/%3E%3Cpath d='M12 3L9.27 9.27L3 12l6.27 2.73L12 21l2.73-6.27L21 12l-6.27-2.73L12 3z' /%3E%3Cpath d='M5 3v4' /%3E%3Cpath d='M19 17v4' /%3E%3Cpath d='M3 5h4' /%3E%3Cpath d='M17 19h4' /%3E%3C/svg%3E";
+               if (amReminder && amReminder === currentTime) {
+                  registration.showNotification("☀️ Good Morning!", { body: "Time for your AM skincare routine. Let's start the day fresh!", icon });
+               }
+               if (pmReminder && pmReminder === currentTime) {
+                  registration.showNotification("🌙 Good Evening!", { body: "Time for your PM skincare routine. Wind down and care for your skin.", icon });
+               }
+           });
+
        }, 60000); 
        
        return () => clearInterval(interval);
